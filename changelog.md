@@ -75,7 +75,21 @@ versión 2.5
 - Cambié los inputs para que sean más directos.
 - Compruebo que la carpeta base tenga el nombre correcto.
 
-versión 2.6
+ ---
+
+## v2.6 (18 de marzo de 2024)
+
+### New features
+
+* 
+
+### Bug fixes
+
+* 
+
+### Improvements
+
+* 
 
  ----
 Tengo este script en Python:
