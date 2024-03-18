@@ -80,22 +80,12 @@ versión 2.6
  ----
 Tengo este script en Python:
 
-Actualmente, todas las columnas del Excel se están alineando a la izquierda. Sin embargo, esto no es 100% deseable.
-Necesito que los datos de las siguientes columnas estén alineadas a la izquierda:
-- Código Unidad
-- Fecha cierre expediente
-- Orden de expediente
-- Total páginas
-- Fecha inicial
-- Fecha final
-- Fecha entrega
-- Fecha de recibido
-- Fecha de creación del documento
-- Fecha incorporación expediente
-- Orden documento expediente
-- Página inicio
-- Página fin
 
+De la hoja metadatos_expediente, las columnas R, S, T, U, V, W, X, Y, Z, AA y AB no se está autoajustando el ancho de las celdas.
 
+Los datos de las columnas:
+- De la hoja metadatos_expediente: A, K, O, P, U, X.
+- De la hoja metadatos_tipologia_documental: D y E.
+Se están almacenando como texto y sale error al abrir el Excel. Necesito que esos datos sean almacenados como número o convertidos a formato número en Excel.
 
-
+La hoja Listas no se está generando correctamente. Debe ponerse la información estática que está en un archivo en la misma carpeta llamado listas.csv.
