@@ -12,14 +12,14 @@ from openpyxl.styles import Alignment
 from openpyxl.utils import get_column_letter
 
 # Lista para almacenar información estática
-static_info = []
+STATIC_INFO = []
 
 # Función para convertir rutas a formato Unix
 def convert_to_unix_format(path):
     return path.replace('\\', '/')
 
 # Función para validar que la carpeta tiene el nombre correcto
-def check_base_folder(base_folder):
+def is_valid_base_folder(base_folder):
     required_folder_names = [
         "3140_C09.06_CONTRATO_PRESTACION_SERVICIOS",
         "3140_C09.08_ORDEN_COMPRA",
@@ -30,10 +30,7 @@ def check_base_folder(base_folder):
     ]
     
     base_folder_name = os.path.basename(base_folder)
-    if base_folder_name in required_folder_names:
-        return True
-    else:
-        return False
+    return base_folder_name in required_folder_names
 
 # Función para obtener el código de calidad del archivo
 def get_quality_code(file_name):
@@ -41,135 +38,90 @@ def get_quality_code(file_name):
     match = re.search(pattern, file_name)
     return match.group() if match else ""
 
-# Función para obtener el código de unidad
-def get_unit_code(base_folder_name):
-    pattern = r"^\d{4}"
-    match = re.search(pattern, base_folder_name)
-    return match.group() if match else "3140"
-
-# Función para obtener el nombre de la unidad
-def get_unit_name():
-    return "División Financiera"
-
-# Función para obtener el código de serie
-def get_series_code(base_folder_name):
-    pattern = r"C\d{2}"
-    match = re.search(pattern, base_folder_name)
-    return match.group() if match else "C09"
-
-# Función para obtener el nombre de la serie
-def get_series_name():
-    return "Contratos"
-
-# Función para obtener el nombre de expediente
-def get_expedient_name(user_folder_name):
-    return user_folder_name
-
-# Función para obtener el código de subserie
-def get_subseries_code(base_folder_name):
-    pattern = r"C\d{2}.\d{2}"
-    match = re.search(pattern, base_folder_name)
-    return match.group() if match else "C09.11"
-
-# Función para obtener el nombre de la subserie
-def get_subseries_name(base_folder_name):
-    subseries_equivalences = load_subseries_equivalences()
-    subseries_name = "Orden de Prestación de Servicios"
-
-    pattern = r"C\d{2}.\d{2}"
-    match = re.search(pattern, base_folder_name)
-    if match:
-        subseries_code = match.group()
-        subseries_name = subseries_equivalences.get(subseries_code, "Orden de Prestación de Servicios")
-
-    return subseries_name
-
-# Función para actualizar el valor de una fila
-def update_value(row, name_equivalences, typology_equivalences):
-    file_name = row['Nombre del archivo']
-    for name, value in name_equivalences.items():
-        if name in file_name:
-            row['Nombre del documento'] = value
-            break
-    for name, typology in typology_equivalences.items():
-        if name in file_name:
-            row['Tipología documental'] = typology
-            break
-    return row
-
-# Función para obtener la descripción del contenido
-def get_content_description(number):
-    description = ""
-    if number == 1:
-        description = input("Documento con CC o NIT (CC XXXXXXXX): ")
-    elif number == 2:
-        description = "Nombre " + input("Nombre completo contratista: ")
-    elif number == 3:
-        description = "$ " + input("Valor total del contrato: ")
-    return description
-
-# Función para obtener la fecha del contrato
-def get_contract_date(message):
-    valid_date = False
-    while not valid_date:
-        date = input(message)
-        try:
-            date_obj = datetime.datetime.strptime(date, '%d%m%Y')
-            valid_date = True
-        except ValueError:
-            print("¡Ups! Fecha ingresada no válida. Ingresa la fecha en formato DDMMAAAA.")
-    return date_obj.strftime('%Y%m%d')
-
-# Función para abrir un archivo PDF
-def open_pdf(pdf_name):
-    subprocess.Popen(['start', '', pdf_name], shell=True)
-
-# Función para cerrar Adobe Acrobat
-def close_pdf():
-    with open(os.devnull, 'w') as devnull:
-        subprocess.Popen(['taskkill', '/F', '/IM', 'Acrobat.exe'], stdout=devnull, stderr=devnull)
-
-# Función para cargar equivalencias de nombres desde un archivo JSON
-def load_name_equivalences():
-    with open('equivalencias_nombres.json', 'r') as f:
-        return json.load(f)
-
-# Función para cargar equivalencias de tipologías desde un archivo JSON
-def load_typology_equivalences():
-    with open('equivalencias_tipologias.json', 'r') as f:
-        return json.load(f)
-
-# Función para cargar equivalencias de subseries desde un archivo JSON
-def load_subseries_equivalences():
-    with open('equivalencias_subserie.json', 'r') as f:
-        return json.load(f)
-
 # Función para cargar información estática desde un archivo CSV
 def load_static_info():
     static_info = []
-    with open('listas.csv', newline='', encoding='utf-8') as csvfile:
+    with open('lists.csv', newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             static_info.append(row)
     return static_info
 
-# Variables con información del expediente
-autor = "Hilda Lorena Centeno Infante"
-idioma = "Español"
-origen = "Electrónico"
-acceso = "Público"
-frecuencia_consulta = "Media"
-soporte = "Electrónico"
-nombre_responsable_entrega = "Efraín Alberto Sanmiguel Acevedo"
-cargo_responsable_entrega = "Jefe División Financiera"
-fecha_entrega = "20230512"
-nombre_responsable_recibido = "Matilde Cortés Becerra"
-cargo_responsable_recibido = "Auxiliar de Archivo"
-fecha_recibido = "20230512"
-nombre_unidad_recibe = "Dirección de Certificación y Gestión Documental"
-tipo_expediente = "Electrónico"
-acceso_expediente = "Pública"
-objeto_inventario = "Inventario Archivo de Gestión"
+# Función para cargar equivalencias de nombres desde un archivo JSON
+def load_name_equivalences():
+    with open('equivalences_names.json', 'r') as f:
+        return json.load(f)
+
+# Función para cargar equivalencias de tipologías desde un archivo JSON
+def load_typology_equivalences():
+    with open('equivalences_typologies.json', 'r') as f:
+        return json.load(f)
+
+# Función para cargar equivalencias de subseries desde un archivo JSON
+def load_subseries_equivalences():
+    with open('equivalences_subseries.json', 'r') as f:
+        return json.load(f)
+
+# Cargar el archivo de configuración
+with open('configuration.json', 'r', encoding='utf-8') as config_file:
+    config_data = json.load(config_file)
+
+# Función para generar el marco de datos del usuario
+def generate_user_data_frame(user, base_folder, name_equivalences, typology_equivalences, initial_order=1):
+    user_folder = os.path.join(base_folder, user)
+    expedient_order = initial_order
+
+    existing_excel_path = os.path.join(user_folder, f'{user}.xlsx')
+    if os.path.exists(existing_excel_path):
+        while True:
+            response = input(f"Ya hay un Excel para {user}. ¿Lo cambiamos? (s/n): ")
+            if response.lower() == 's':
+                break
+            elif response.lower() == 'n':
+                print("Vale. El expediente se omitirá.")
+                return None, None
+            else:
+                print("¡Ups! Respuesta no válida. Por favor ingresa 's' para cambiarlo o 'n' para omitirlo.")
+
+    pdf_info, document_order, main_file_date = process_pdf(user_folder, 0, None, name_equivalences, typology_equivalences, STATIC_INFO)
+    df = pd.DataFrame(pdf_info)
+
+    df = df.apply(update_value, args=(name_equivalences, typology_equivalences), axis=1)
+
+    expedient_closure_date = max(pdf_info, key=lambda x: x['Fecha de creación del documento'])['Fecha de creación del documento']
+    total_pages = pdf_info[-1]['Página fin']
+
+    expedient_info = {'Código Unidad': get_unit_code(base_folder),
+                        'Nombre Unidad': config_data['nombre_unidad'],
+                        'Código Serie': get_series_code(base_folder),
+                        'Nombre Serie': config_data['nombre_serie'],
+                        'Código Subserie': get_subseries_code(base_folder),
+                        'Nombre Subserie': get_subseries_name(base_folder),
+                        'Nombre del expediente': get_expedient_name(user),
+                        'Descripción del contenido 1': get_content_description(1),
+                        'Descripción del contenido 2': get_content_description(2),
+                        'Descripción del contenido 3': get_content_description(3),
+                        'Fecha cierre expediente': expedient_closure_date,
+                        'Orden de expediente': expedient_order,
+                        'Total páginas': total_pages,
+                        'Objeto inventario': config_data['objeto_inventario'],
+                        'Fecha inicial': get_contract_date("Ingresa la fecha de inicio del contrato (DDMMAAAA): "),
+                        'Fecha final': get_contract_date("Ingresa la fecha de finalización del contrato (DDMMAAAA): "),
+                        'Frecuencia consulta': config_data['frecuencia_consulta'],
+                        'Soporte': config_data['soporte'],
+                        'Nombre responsable entrega': config_data['nombre_responsable_entrega'],
+                        'Cargo responsable Entrega': config_data['cargo_responsable_entrega'],
+                        'Fecha entrega': config_data['fecha_entrega'],
+                        'Nombre responsable recibido': config_data['nombre_responsable_recibido'],
+                        'Cargo responsable recibido': config_data['cargo_responsable_recibido'],
+                        'Fecha de recibido': config_data['fecha_recibido'],
+                        'Nombre Unidad que recibe': config_data['nombre_unidad_recibe'],
+                        'Tipo de Expediente': config_data['tipo_expediente'],
+                        'Acceso': config_data['acceso_expediente'],
+                        'Observaciones': ''}
+
+    df_expedient = pd.DataFrame([expedient_info])
+    return df, df_expedient
 
 # Función para procesar archivos PDF
 def process_pdf(user_folder, document_order, previous_main_file_date, name_equivalences, typology_equivalences, static_info):
@@ -216,10 +168,10 @@ def process_pdf(user_folder, document_order, previous_main_file_date, name_equiv
                     'Orden documento expediente': document_order,
                     'Página inicio': start_page,
                     'Página fin': end_page,
-                    'Origen': origen,
-                    'Acceso': acceso,
-                    'Idioma': idioma,
-                    'Autor': autor,
+                    'Origen': config_data['origen'],
+                    'Acceso': config_data['acceso'],
+                    'Idioma': config_data['idioma'],
+                    'Autor': config_data['autor'],
                     'Código calidad': get_quality_code(pdf_file),
                     'Numero': '',
                     'Año': '',
@@ -234,65 +186,92 @@ def process_pdf(user_folder, document_order, previous_main_file_date, name_equiv
 
     return pdf_info, document_order, previous_main_file_date
 
-# Variable para el orden del expediente
-expedient_order = 1
+# Función para actualizar el valor de una fila
+def update_value(row, name_equivalences, typology_equivalences):
+    file_name = row['Nombre del archivo']
+    for name, value in name_equivalences.items():
+        if name in file_name:
+            row['Nombre del documento'] = value
+            break
+    for name, typology in typology_equivalences.items():
+        if name in file_name:
+            row['Tipología documental'] = typology
+            break
+    return row
 
-# Función para generar el marco de datos del usuario
-def generate_user_data_frame(user, base_folder, name_equivalences, typology_equivalences, initial_order=1):
-    user_folder = os.path.join(base_folder, user)
-    expedient_order = initial_order
+# Función para obtener el código de unidad
+def get_unit_code(base_folder_name):
+    pattern = r"^\d{4}"
+    match = re.search(pattern, base_folder_name)
+    return match.group() if match else "3140"
 
-    existing_excel_path = os.path.join(user_folder, f'{user}.xlsx')
-    if os.path.exists(existing_excel_path):
-        while True:
-            response = input(f"Ya hay un Excel para {user}. ¿Lo cambiamos? (s/n): ")
-            if response.lower() == 's':
-                break
-            elif response.lower() == 'n':
-                print("Vale. El expediente se omitirá.")
-                return None, None
-            else:
-                print("¡Ups! Respuesta no válida. Por favor ingresa 's' para cambiarlo o 'n' para omitirlo.")
+# Función para obtener el código de serie
+def get_series_code(base_folder_name):
+    pattern = r"C\d{2}"
+    match = re.search(pattern, base_folder_name)
+    return match.group() if match else "C09"
 
-    pdf_info, document_order, main_file_date = process_pdf(user_folder, 0, None, name_equivalences, typology_equivalences, static_info)
-    df = pd.DataFrame(pdf_info)
+# Función para obtener el nombre de expediente
+def get_expedient_name(user_folder_name):
+    return user_folder_name
 
-    df = df.apply(update_value, args=(name_equivalences, typology_equivalences), axis=1)
+# Función para obtener el código de subserie
+def get_subseries_code(base_folder_name):
+    pattern = r"C\d{2}.\d{2}"
+    match = re.search(pattern, base_folder_name)
+    return match.group() if match else "C09.11"
 
-    expedient_closure_date = max(pdf_info, key=lambda x: x['Fecha de creación del documento'])['Fecha de creación del documento']
-    total_pages = pdf_info[-1]['Página fin']
+# Función para obtener el nombre de la subserie
+def get_subseries_name(base_folder_name):
+    subseries_equivalences = load_subseries_equivalences()
+    subseries_name = "Orden de Prestación de Servicios"
 
-    expedient_info = {'Código Unidad': get_unit_code(base_folder), 'Nombre Unidad': get_unit_name(),
-                        'Código Serie': get_series_code(base_folder), 'Nombre Serie': get_series_name(),
-                        'Código Subserie': get_subseries_code(base_folder),
-                        'Nombre Subserie': get_subseries_name(base_folder),
-                        'Nombre del expediente': get_expedient_name(user),
-                        'Descripción del contenido 1': get_content_description(1),
-                        'Descripción del contenido 2': get_content_description(2),
-                        'Descripción del contenido 3': get_content_description(3),
-                        'Fecha cierre expediente': expedient_closure_date,
-                        'Orden de expediente': expedient_order,
-                        'Total páginas': total_pages,
-                        'Objeto inventario': objeto_inventario,
-                        'Fecha inicial': get_contract_date("Ingresa la fecha de inicio del contrato (DDMMAAAA): "),
-                        'Fecha final': get_contract_date("Ingresa la fecha de finalización del contrato (DDMMAAAA): "),
-                        'Frecuencia consulta': frecuencia_consulta,
-                        'Soporte': soporte,
-                        'Nombre responsable entrega': nombre_responsable_entrega,
-                        'Cargo responsable Entrega': cargo_responsable_entrega, 'Fecha entrega': fecha_entrega,
-                        'Nombre responsable recibido': nombre_responsable_recibido, 'Cargo responsable recibido': cargo_responsable_recibido,
-                        'Fecha de recibido': fecha_recibido, 'Nombre Unidad que recibe': nombre_unidad_recibe,
-                        'Tipo de Expediente': tipo_expediente, 'Acceso': acceso_expediente, 'Observaciones': ''}
+    pattern = r"C\d{2}.\d{2}"
+    match = re.search(pattern, base_folder_name)
+    if match:
+        subseries_code = match.group()
+        subseries_name = subseries_equivalences.get(subseries_code, "Orden de Prestación de Servicios")
 
-    df_expedient = pd.DataFrame([expedient_info])
-    return df, df_expedient
+    return subseries_name
+
+# Función para obtener la descripción del contenido
+def get_content_description(number):
+    description = ""
+    if number == 1:
+        description = input("Documento con CC o NIT (CC XXXXXXXX): ")
+    elif number == 2:
+        description = "Nombre " + input("Nombre completo contratista: ")
+    elif number == 3:
+        description = "$ " + input("Valor total del contrato: ")
+    return description
+
+# Función para obtener la fecha del contrato
+def get_contract_date(message):
+    valid_date = False
+    while not valid_date:
+        date = input(message)
+        try:
+            date_obj = datetime.datetime.strptime(date, '%d%m%Y')
+            valid_date = True
+        except ValueError:
+            print("¡Ups! Fecha ingresada no válida. Ingresa la fecha en formato DDMMAAAA.")
+    return date_obj.strftime('%Y%m%d')
+
+# Función para abrir un archivo PDF
+def open_pdf(pdf_name):
+    subprocess.Popen(['start', '', pdf_name], shell=True)
+
+# Función para cerrar Adobe Acrobat
+def close_pdf():
+    with open(os.devnull, 'w') as devnull:
+        subprocess.Popen(['taskkill', '/F', '/IM', 'Acrobat.exe'], stdout=devnull, stderr=devnull)
 
 # Función para guardar en Excel
 def save_to_excel(user, user_folder, result_folder, df, df_expedient):
     workbook = Workbook()
     lists_sheet = workbook.active
 
-    for row_index, row in enumerate(static_info, start=1):
+    for row_index, row in enumerate(STATIC_INFO, start=1):
         for col_index, value in enumerate(row, start=1):
             lists_sheet.cell(row=row_index, column=col_index, value=value)
 
@@ -308,7 +287,7 @@ def save_to_excel(user, user_folder, result_folder, df, df_expedient):
         df_expedient.to_excel(writer, sheet_name='metadatos_expediente', index=False)
 
         worksheet_lists = workbook['Listas']
-        for row_index, row_data in enumerate(static_info, start=1):
+        for row_index, row_data in enumerate(STATIC_INFO, start=1):
             for col_index, value in enumerate(row_data.values(), start=1):
                 worksheet_lists.cell(row=row_index, column=col_index, value=value)
 
@@ -342,7 +321,7 @@ def main():
     base_folder = input("¡Hola! Por favor ingresa la carpeta de contratos con los que trabajaremos hoy: ")
     base_folder = convert_to_unix_format(base_folder)
 
-    if not check_base_folder(base_folder):
+    if not is_valid_base_folder(base_folder):
         print("¡Ups! La carpeta que ingresaste parece ser la incorrecta :c Deberías revisarla y estar más pendiente de tu trabajo.")
         return
 
@@ -352,7 +331,8 @@ def main():
 
     name_equivalences = load_name_equivalences()
     typology_equivalences = load_typology_equivalences()
-    static_info = load_static_info()
+    global STATIC_INFO
+    STATIC_INFO = load_static_info()
 
     initial_order_input = input("Orden del expediente: ")
     if initial_order_input.strip():
@@ -378,14 +358,13 @@ def main():
                 print("No se encontró ningún PDF para abrir.")
 
             # Preguntar al usuario si desea analizar el expediente
-            analyze_expedient = input(f"¿Deseas analizar el expediente '{user}'? (S/N): ")
+            analyze_expedient = input(f"¿Deseas analizar el expediente {initial_order}. {user}? (S/N): ")
             if analyze_expedient.lower() != 's':
                 print(f"El expediente '{user}' será omitido.")
                 continue  # Saltar al siguiente expediente
 
             # Mostrar información al usuario
-            print(f"Iniciando diligenciamiento del expediente '{user}'...")
-            print(f"Orden del expediente: {initial_order}")
+            print(f"Iniciando diligenciamiento del expediente {initial_order}. {user}...")
 
             df, df_expedient = generate_user_data_frame(user, base_folder, name_equivalences, typology_equivalences, initial_order)
 
@@ -409,9 +388,9 @@ def main():
                 else:
                     print("¡Ups! Respuesta no válida. Por favor ingresa 'S' para marcarlo o 'N' para omitir.")
 
-            response = input("¿Continuamos? (S/N): ")
-            if response.lower() != 's':
-                break
+            # response = input("¿Continuamos? (S/N): ")
+            # if response.lower() != 's':
+            #     break
 
 # Función para copiar el archivo Excel a la carpeta del usuario
 def copy_excel_to_user_folder(user, base_folder, result_folder):

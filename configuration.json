@@ -14,5 +14,7 @@
   "nombre_unidad_recibe": "Dirección de Certificación y Gestión Documental",
   "tipo_expediente": "Electrónico",
   "acceso_expediente": "Pública",
-  "objeto_inventario": "Inventario Archivo de Gestión"
+  "objeto_inventario": "Inventario Archivo de Gestión",
+  "nombre_unidad": "División Financiera",
+  "nombre_serie": "Contratos"
 }
