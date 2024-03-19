@@ -385,11 +385,6 @@ def main():
                     pdf_name = os.path.join(user_folder, pdf_file)
                     break
 
-            if pdf_name:
-                open_pdf(pdf_name)
-            else:
-                print("No se encontró ningún PDF para abrir.")
-
             # Preguntar al usuario si desea analizar el expediente
             analyze_expedient = input(f"¿Deseas analizar el expediente {initial_order}. {user}? (S/N): ")
             if analyze_expedient.lower() != 's':
@@ -398,6 +393,11 @@ def main():
 
             # Mostrar información al usuario
             print(f"Iniciando diligenciamiento del expediente {initial_order}. {user}...")
+
+            if pdf_name:
+                open_pdf(pdf_name)
+            else:
+                print("No se encontró ningún PDF para abrir.")
 
             df, df_expedient = generate_user_data_frame(user, base_folder, name_equivalences, typology_equivalences, initial_order)
 
