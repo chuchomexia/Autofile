@@ -310,6 +310,39 @@ def save_to_excel(user, user_folder, result_folder, df, df_expedient):
                 adjusted_width = (max_length + 2) * 1.2
                 worksheet.column_dimensions[column_letter].width = adjusted_width
 
+        # Convertir datos a formato numérico en Excel
+        for col in ['A', 'J', 'K', 'O', 'P', 'U', 'X']:  # Columnas que se convertirán a formato numérico
+            worksheet_expedient = writer.sheets['metadatos_expediente']
+            for cell in worksheet_expedient[col]:
+                if cell.value:
+                    try:
+                        cell.value = float(cell.value)
+                    except ValueError:
+                        pass
+                cell.alignment = Alignment(horizontal='right')  # Mover esta línea aquí dentro del bucle
+
+        for col in ['D', 'E']:  # Columnas que se convertirán a formato numérico
+            worksheet_tipologia = writer.sheets['metadatos_tipologia_documental']
+            for cell in worksheet_tipologia[col]:  
+                if cell.value:
+                    try:
+                        cell.value = float(cell.value)
+                    except ValueError:
+                        pass
+                cell.alignment = Alignment(horizontal='right')  # Mover esta línea aquí dentro del bucle
+
+        # Ajustar ancho de columnas para hoja metadatos_expediente
+        for column_letter in ['R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB']:
+            max_length = 0
+            for cell in worksheet_expedient[column_letter]:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = (max_length + 2) * 1.2
+            worksheet_expedient.column_dimensions[column_letter].width = adjusted_width
+
     print(f"Se ha generado el archivo Excel para el expediente {user} en: {xlsx_output_path}")
 
     input("Presiona Enter para cerrar el PDF")
