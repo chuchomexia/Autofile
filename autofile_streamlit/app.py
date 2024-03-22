@@ -6,6 +6,7 @@ import shutil
 import datetime
 import subprocess
 import pandas as pd
+import streamlit as st
 from PyPDF2 import PdfReader
 from openpyxl import Workbook
 from openpyxl.styles import Alignment
@@ -31,12 +32,6 @@ def is_valid_base_folder(base_folder):
     
     base_folder_name = os.path.basename(base_folder)
     return base_folder_name in required_folder_names
-
-# Función para obtener el código de calidad del archivo
-def get_quality_code(file_name):
-    pattern = r"F[A-Z]{2}.(\d{2,})"
-    match = re.search(pattern, file_name)
-    return match.group() if match else ""
 
 # Función para cargar información estática desde un archivo CSV
 def load_static_info():
@@ -74,14 +69,14 @@ def generate_user_data_frame(user, base_folder, name_equivalences, typology_equi
     existing_excel_path = os.path.join(user_folder, f'{user}.xlsx')
     if os.path.exists(existing_excel_path):
         while True:
-            response = input(f"Ya hay un Excel para {user}. ¿Lo cambiamos? (s/n): ")
+            response = st.text_input(f"Ya hay un Excel para {user}. ¿Lo cambiamos? (s/n): ")
             if response.lower() == 's':
                 break
             elif response.lower() == 'n':
-                print("Vale. El expediente se omitirá.")
+                st.write("Vale. El expediente se omitirá.")
                 return None, None
             else:
-                print("¡Ups! Respuesta no válida. Por favor ingresa 's' para cambiarlo o 'n' para omitirlo.")
+                st.write("¡Ups! Respuesta no válida. Por favor ingresa 's' para cambiarlo o 'n' para omitirlo.")
 
     pdf_info, document_order, main_file_date = process_pdf(user_folder, 0, None, name_equivalences, typology_equivalences, STATIC_INFO)
     df = pd.DataFrame(pdf_info)
@@ -182,7 +177,7 @@ def process_pdf(user_folder, document_order, previous_main_file_date, name_equiv
                 previous_end_page = end_page
 
         except Exception as e:
-            print(f"No se pudo leer el archivo {pdf_file}: {str(e)}")
+            st.write(f"No se pudo leer el archivo {pdf_file}: {str(e)}")
 
     return pdf_info, document_order, previous_main_file_date
 
@@ -204,6 +199,12 @@ def get_unit_code(base_folder_name):
     pattern = r"^\d{4}"
     match = re.search(pattern, base_folder_name)
     return match.group() if match else "3140"
+
+# Función para obtener el código de calidad del archivo
+def get_quality_code(file_name):
+    pattern = r"F[A-Z]{2}.(\d{2,})"
+    match = re.search(pattern, file_name)
+    return match.group() if match else ""
 
 # Función para obtener el código de serie
 def get_series_code(base_folder_name):
@@ -238,23 +239,23 @@ def get_subseries_name(base_folder_name):
 def get_content_description(number):
     description = ""
     if number == 1:
-        description = input("Documento con CC o NIT (CC XXXXXXXX): ")
+        description = st.text_input("Documento con CC o NIT (CC XXXXXXXX): ")
     elif number == 2:
-        description = "Nombre " + input("Nombre completo contratista: ")
+        description = "Nombre " + st.text_input("Nombre completo contratista: ")
     elif number == 3:
-        description = "$ " + input("Valor total del contrato: ")
+        description = "$ " + st.text_input("Valor total del contrato: ")
     return description
 
 # Función para obtener la fecha del contrato
 def get_contract_date(message):
     valid_date = False
     while not valid_date:
-        date = input(message)
+        date = st.text_input(message)
         try:
             date_obj = datetime.datetime.strptime(date, '%d%m%Y')
             valid_date = True
         except ValueError:
-            print("¡Ups! Fecha ingresada no válida. Ingresa la fecha en formato DDMMAAAA.")
+            st.write("¡Ups! Fecha ingresada no válida. Ingresa la fecha en formato DDMMAAAA.")
     return date_obj.strftime('%Y%m%d')
 
 # Función para abrir un archivo PDF
@@ -310,19 +311,53 @@ def save_to_excel(user, user_folder, result_folder, df, df_expedient):
                 adjusted_width = (max_length + 2) * 1.2
                 worksheet.column_dimensions[column_letter].width = adjusted_width
 
-    print(f"Se ha generado el archivo Excel para el expediente {user} en: {xlsx_output_path}")
+        # Convertir datos a formato numérico en Excel
+        for col in ['A', 'J', 'K', 'O', 'P', 'U', 'X']:  # Columnas que se convertirán a formato numérico
+            worksheet_expedient = writer.sheets['metadatos_expediente']
+            for cell in worksheet_expedient[col]:
+                if cell.value:
+                    try:
+                        cell.value = float(cell.value)
+                    except ValueError:
+                        pass
+                cell.alignment = Alignment(horizontal='right')  # Mover esta línea aquí dentro del bucle
 
-    input("Presiona Enter para cerrar el PDF")
+        for col in ['D', 'E']:  # Columnas que se convertirán a formato numérico
+            worksheet_tipologia = writer.sheets['metadatos_tipologia_documental']
+            for cell in worksheet_tipologia[col]:  
+                if cell.value:
+                    try:
+                        cell.value = float(cell.value)
+                    except  ValueError:
+                        pass
+                cell.alignment = Alignment(horizontal='right')  # Mover esta línea aquí dentro del bucle
+
+        # Ajustar ancho de columnas para hoja metadatos_expediente
+        for column_letter in ['R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB']:
+            max_length = 0
+            for cell in worksheet_expedient[column_letter]:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = (max_length + 2) * 1.2
+            worksheet_expedient.column_dimensions[column_letter].width = adjusted_width
+
+    st.write(f"Se ha generado el archivo Excel para el expediente {user} en: {xlsx_output_path}")
+
+    st.write("Presiona el botón para cerrar el PDF")
 
     close_pdf()
 
 # Función principal
 def main():
-    base_folder = input("¡Hola! Por favor ingresa la carpeta de contratos con los que trabajaremos hoy: ")
+    st.write("¡Hola! Por favor ingresa la carpeta de contratos con los que trabajaremos hoy: ")
+    base_folder = st.text_input("Carpeta de contratos")
     base_folder = convert_to_unix_format(base_folder)
 
     if not is_valid_base_folder(base_folder):
-        print("¡Ups! La carpeta que ingresaste parece ser la incorrecta :c Deberías revisarla y estar más pendiente de tu trabajo.")
+        st.write("¡Ups! La carpeta que ingresaste parece ser la incorrecta :c Deberías revisarla y estar más pendiente de tu trabajo.")
         return
 
     result_folder = os.path.join(base_folder, 'Excel')
@@ -334,7 +369,7 @@ def main():
     global STATIC_INFO
     STATIC_INFO = load_static_info()
 
-    initial_order_input = input("Orden del expediente: ")
+    initial_order_input = st.text_input("Orden del expediente: ")
     if initial_order_input.strip():
         initial_order = int(initial_order_input)
     else:
@@ -352,19 +387,19 @@ def main():
                     pdf_name = os.path.join(user_folder, pdf_file)
                     break
 
-            if pdf_name:
-                open_pdf(pdf_name)
-            else:
-                print("No se encontró ningún PDF para abrir.")
-
             # Preguntar al usuario si desea analizar el expediente
-            analyze_expedient = input(f"¿Deseas analizar el expediente {initial_order}. {user}? (S/N): ")
+            analyze_expedient = st.text_input(f"¿Deseas analizar el expediente {initial_order}. {user}? (S/N): ")
             if analyze_expedient.lower() != 's':
-                print(f"El expediente '{user}' será omitido.")
+                st.write(f"El expediente '{user}' será omitido.")
                 continue  # Saltar al siguiente expediente
 
             # Mostrar información al usuario
-            print(f"Iniciando diligenciamiento del expediente {initial_order}. {user}...")
+            st.write(f"Iniciando diligenciamiento del expediente {initial_order}. {user}...")
+
+            if pdf_name:
+                open_pdf(pdf_name)
+            else:
+                st.write("No se encontró ningún PDF para abrir.")
 
             df, df_expedient = generate_user_data_frame(user, base_folder, name_equivalences, typology_equivalences, initial_order)
 
@@ -377,7 +412,7 @@ def main():
             expedient_marked = False
 
             while True:
-                response = input("¿Lo revisamos luego? (S/N): ")
+                response = st.text_input("¿Lo revisamos luego? (S/N): ")
                 if response.lower() == 's':
                     with open(os.path.join(base_folder, 'expedientes_por_revisar.txt'), 'a') as report:
                         report.write(user + '\\n')
@@ -386,7 +421,7 @@ def main():
                 elif response.lower() == 'n':
                     break
                 else:
-                    print("¡Ups! Respuesta no válida. Por favor ingresa 'S' para marcarlo o 'N' para omitir.")
+                    st.write("¡Ups! Respuesta no válida. Por favor ingresa 'S' para marcarlo o 'N' para omitir.")
 
             # response = input("¿Continuamos? (S/N): ")
             # if response.lower() != 's':
@@ -402,7 +437,7 @@ def copy_excel_to_user_folder(user, base_folder, result_folder):
     destination_path = os.path.join(user_folder, f'{user}.xlsx')
     
     shutil.copy(excel_file_path, destination_path)
-    print(f"Archivo Excel guardado también en la carpeta del expediente {user}")
+    st.write(f"Archivo Excel guardado también en la carpeta del expediente {user}")
 
 if __name__ == "__main__":
     main()
