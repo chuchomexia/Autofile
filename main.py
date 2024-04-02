@@ -1,66 +1,15 @@
 import os
 import re
-import csv
 import json
-import shutil
-import datetime
-import subprocess
 import pandas as pd
-from PyPDF2 import PdfReader
 from openpyxl import Workbook
 from openpyxl.styles import Alignment
 from openpyxl.utils import get_column_letter
+from PyPDF2 import PdfReader
+from utils import *
 
 # Lista para almacenar información estática
 STATIC_INFO = []
-
-# Función para convertir rutas a formato Unix
-def convert_to_unix_format(path):
-    return path.replace('\\', '/')
-
-# Función para validar que la carpeta tiene el nombre correcto
-def is_valid_base_folder(base_folder):
-    required_folder_names = [
-        "3140_C09.06_CONTRATO_PRESTACION_SERVICIOS",
-        "3140_C09.08_ORDEN_COMPRA",
-        "3140_C09.11_ORDEN_PRESTACION_SERVICIOS",
-        "3140_C09.12_ORDEN_TRABAJO",
-        "3140_C09.17_ORDEN_CONSULTORIA",
-        "3140_C09.33_ORDEN_SUMINISTROS"
-    ]
-    
-    base_folder_name = os.path.basename(base_folder)
-    return base_folder_name in required_folder_names
-
-# Función para obtener el código de calidad del archivo
-def get_quality_code(file_name):
-    pattern = r"F[A-Z]{2}.(\d{2,})"
-    match = re.search(pattern, file_name)
-    return match.group() if match else ""
-
-# Función para cargar información estática desde un archivo CSV
-def load_static_info():
-    static_info = []
-    with open('lists.csv', newline='', encoding='utf-8') as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            static_info.append(row)
-    return static_info
-
-# Función para cargar equivalencias de nombres desde un archivo JSON
-def load_name_equivalences():
-    with open('equivalences_names.json', 'r') as f:
-        return json.load(f)
-
-# Función para cargar equivalencias de tipologías desde un archivo JSON
-def load_typology_equivalences():
-    with open('equivalences_typologies.json', 'r') as f:
-        return json.load(f)
-
-# Función para cargar equivalencias de subseries desde un archivo JSON
-def load_subseries_equivalences():
-    with open('equivalences_subseries.json', 'r') as f:
-        return json.load(f)
 
 # Cargar el archivo de configuración
 with open('configuration.json', 'r', encoding='utf-8') as config_file:
@@ -199,73 +148,6 @@ def update_value(row, name_equivalences, typology_equivalences):
             break
     return row
 
-# Función para obtener el código de unidad
-def get_unit_code(base_folder_name):
-    pattern = r"^\d{4}"
-    match = re.search(pattern, base_folder_name)
-    return match.group() if match else "3140"
-
-# Función para obtener el código de serie
-def get_series_code(base_folder_name):
-    pattern = r"C\d{2}"
-    match = re.search(pattern, base_folder_name)
-    return match.group() if match else "C09"
-
-# Función para obtener el nombre de expediente
-def get_expedient_name(user_folder_name):
-    return user_folder_name
-
-# Función para obtener el código de subserie
-def get_subseries_code(base_folder_name):
-    pattern = r"C\d{2}.\d{2}"
-    match = re.search(pattern, base_folder_name)
-    return match.group() if match else "C09.11"
-
-# Función para obtener el nombre de la subserie
-def get_subseries_name(base_folder_name):
-    subseries_equivalences = load_subseries_equivalences()
-    subseries_name = "Orden de Prestación de Servicios"
-
-    pattern = r"C\d{2}.\d{2}"
-    match = re.search(pattern, base_folder_name)
-    if match:
-        subseries_code = match.group()
-        subseries_name = subseries_equivalences.get(subseries_code, "Orden de Prestación de Servicios")
-
-    return subseries_name
-
-# Función para obtener la descripción del contenido
-def get_content_description(number):
-    description = ""
-    if number == 1:
-        description = input("Documento con CC o NIT (CC XXXXXXXX): ")
-    elif number == 2:
-        description = "Nombre " + input("Nombre completo contratista: ")
-    elif number == 3:
-        description = "$ " + input("Valor total del contrato: ")
-    return description
-
-# Función para obtener la fecha del contrato
-def get_contract_date(message):
-    valid_date = False
-    while not valid_date:
-        date = input(message)
-        try:
-            date_obj = datetime.datetime.strptime(date, '%d%m%Y')
-            valid_date = True
-        except ValueError:
-            print("¡Ups! Fecha ingresada no válida. Ingresa la fecha en formato DDMMAAAA.")
-    return date_obj.strftime('%Y%m%d')
-
-# Función para abrir un archivo PDF
-def open_pdf(pdf_name):
-    subprocess.Popen(['start', '', pdf_name], shell=True)
-
-# Función para cerrar Adobe Acrobat
-def close_pdf():
-    with open(os.devnull, 'w') as devnull:
-        subprocess.Popen(['taskkill', '/F', '/IM', 'Acrobat.exe'], stdout=devnull, stderr=devnull)
-
 # Función para guardar en Excel
 def save_to_excel(user, user_folder, result_folder, df, df_expedient):
     workbook = Workbook()
@@ -310,6 +192,39 @@ def save_to_excel(user, user_folder, result_folder, df, df_expedient):
                 adjusted_width = (max_length + 2) * 1.2
                 worksheet.column_dimensions[column_letter].width = adjusted_width
 
+        # Convertir datos a formato numérico en Excel
+        for col in ['A', 'H', 'J', 'K', 'O', 'P', 'U', 'X']:  # Columnas que se convertirán a formato numérico
+            worksheet_expedient = writer.sheets['metadatos_expediente']
+            for cell in worksheet_expedient[col]:
+                if cell.value:
+                    try:
+                        cell.value = float(cell.value)
+                    except ValueError:
+                        pass
+                cell.alignment = Alignment(horizontal='right')  # Mover esta línea aquí dentro del bucle
+
+        for col in ['D', 'E']:  # Columnas que se convertirán a formato numérico
+            worksheet_tipologia = writer.sheets['metadatos_tipologia_documental']
+            for cell in worksheet_tipologia[col]:  
+                if cell.value:
+                    try:
+                        cell.value = float(cell.value)
+                    except ValueError:
+                        pass
+                cell.alignment = Alignment(horizontal='right')  # Mover esta línea aquí dentro del bucle
+
+        # Ajustar ancho de columnas para hoja metadatos_expediente
+        for column_letter in ['R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB']:
+            max_length = 0
+            for cell in worksheet_expedient[column_letter]:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = (max_length + 2) * 1.2
+            worksheet_expedient.column_dimensions[column_letter].width = adjusted_width
+
     print(f"Se ha generado el archivo Excel para el expediente {user} en: {xlsx_output_path}")
 
     input("Presiona Enter para cerrar el PDF")
@@ -352,11 +267,6 @@ def main():
                     pdf_name = os.path.join(user_folder, pdf_file)
                     break
 
-            if pdf_name:
-                open_pdf(pdf_name)
-            else:
-                print("No se encontró ningún PDF para abrir.")
-
             # Preguntar al usuario si desea analizar el expediente
             analyze_expedient = input(f"¿Deseas analizar el expediente {initial_order}. {user}? (S/N): ")
             if analyze_expedient.lower() != 's':
@@ -365,6 +275,11 @@ def main():
 
             # Mostrar información al usuario
             print(f"Iniciando diligenciamiento del expediente {initial_order}. {user}...")
+
+            if pdf_name:
+                open_pdf(pdf_name)
+            else:
+                print("No se encontró ningún PDF para abrir.")
 
             df, df_expedient = generate_user_data_frame(user, base_folder, name_equivalences, typology_equivalences, initial_order)
 
