@@ -5,10 +5,6 @@ import json
 import subprocess
 import datetime
 import shutil
-import pandas as pd
-from PyPDF2 import PdfReader
-from openpyxl.styles import Alignment
-from openpyxl.utils import get_column_letter
 
 # Función para convertir rutas a formato Unix
 def convert_to_unix_format(path):
@@ -136,3 +132,11 @@ def copy_excel_to_user_folder(user, base_folder, result_folder):
     
     shutil.copy(excel_file_path, destination_path)
     print(f"Archivo Excel guardado también en la carpeta del expediente {user}")
+
+# Función para cargar la configuración desde un archivo JSON
+def load_config():
+    with open('config.json', 'r') as f:
+        return json.load(f)
+
+# Cargar la configuración al inicio del script
+config_data = load_config()
