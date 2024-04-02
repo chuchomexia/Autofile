@@ -1,7 +1,7 @@
 import os
 import re
 from PyPDF2 import PdfReader
-from utils import config_data, get_quality_code
+from utils import load_name_equivalences, load_typology_equivalences, config_data, get_quality_code
 
 # Función para procesar archivos PDF
 def process_pdf(user_folder, document_order, previous_main_file_date, name_equivalences, typology_equivalences, static_info):

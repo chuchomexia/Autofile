@@ -12,6 +12,9 @@ from pdf import *
 # Lista para almacenar información estática
 STATIC_INFO = []
 
+with open('config.json', 'r', encoding='utf-8') as config_file:
+    config_data = json.load(config_file)
+
 # Función para generar el marco de datos del usuario
 def generate_user_data_frame(user, base_folder, name_equivalences, typology_equivalences, initial_order=1):
     user_folder = os.path.join(base_folder, user)
@@ -84,80 +87,74 @@ def update_value(row, name_equivalences, typology_equivalences):
 
 # Función para guardar en Excel
 def save_to_excel(user, user_folder, result_folder, df, df_expedient):
-    workbook = Workbook()
-    lists_sheet = workbook.active
-
-    for row_index, row in enumerate(STATIC_INFO, start=1):
-        for col_index, value in enumerate(row, start=1):
-            lists_sheet.cell(row=row_index, column=col_index, value=value)
-
     xlsx_output_path = os.path.join(result_folder, f'{user}.xlsx')
-    with pd.ExcelWriter(xlsx_output_path, engine='openpyxl') as writer:
-        workbook = writer.book
+    workbook = Workbook()
 
-        workbook.create_sheet(title='metadatos_expediente', index=0)
-        workbook.create_sheet(title='metadatos_tipologia_documental', index=1)
-        workbook.create_sheet(title='Listas', index=2)
+    workbook.create_sheet(title='metadatos_expediente', index=0)
+    workbook.create_sheet(title='metadatos_tipologia_documental', index=1)
+    workbook.create_sheet(title='Listas', index=2)
 
-        df.to_excel(writer, sheet_name='metadatos_tipologia_documental', index=False)
-        df_expedient.to_excel(writer, sheet_name='metadatos_expediente', index=False)
+    df.to_excel(workbook['metadatos_tipologia_documental'], index=False)
+    df_expedient.to_excel(workbook['metadatos_expediente'], index=False)
 
-        worksheet_lists = workbook['Listas']
-        for row_index, row_data in enumerate(STATIC_INFO, start=1):
-            for col_index, value in enumerate(row_data.values(), start=1):
-                worksheet_lists.cell(row=row_index, column=col_index, value=value)
+    worksheet_lists = workbook['Listas']
+    for row_index, row_data in enumerate(STATIC_INFO, start=1):
+        for col_index, value in enumerate(row_data.values(), start=1):
+            worksheet_lists.cell(row=row_index, column=col_index, value=value)
 
-        for sheet_name in writer.book.sheetnames:
-            worksheet = writer.book[sheet_name]
-            for column_cells in worksheet.columns:
-                for cell in column_cells:
-                    cell.font = None
-                    cell.border = None
-                    cell.alignment = Alignment(horizontal='left')
-            for column in df.columns:
-                max_length = 0
-                column_letter = get_column_letter(df.columns.get_loc(column) + 1)
-                for cell in worksheet[column_letter]:
-                    try:
-                        if len(str(cell.value)) > max_length:
-                            max_length = len(str(cell.value))
-                    except:
-                        pass
-                adjusted_width = (max_length + 2) * 1.2
-                worksheet.column_dimensions[column_letter].width = adjusted_width
-
-        # Convertir datos a formato numérico en Excel
-        for col in ['A', 'H', 'J', 'K', 'O', 'P', 'U', 'X']:  # Columnas que se convertirán a formato numérico
-            worksheet_expedient = writer.sheets['metadatos_expediente']
-            for cell in worksheet_expedient[col]:
-                if cell.value:
-                    try:
-                        cell.value = float(cell.value)
-                    except ValueError:
-                        pass
-                cell.alignment = Alignment(horizontal='right')  # Mover esta línea aquí dentro del bucle
-
-        for col in ['D', 'E']:  # Columnas que se convertirán a formato numérico
-            worksheet_tipologia = writer.sheets['metadatos_tipologia_documental']
-            for cell in worksheet_tipologia[col]:  
-                if cell.value:
-                    try:
-                        cell.value = float(cell.value)
-                    except ValueError:
-                        pass
-                cell.alignment = Alignment(horizontal='right')  # Mover esta línea aquí dentro del bucle
-
-        # Ajustar ancho de columnas para hoja metadatos_expediente
-        for column_letter in ['R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB']:
+    for sheet_name in workbook.sheetnames:
+        worksheet = workbook[sheet_name]
+        for column_cells in worksheet.columns:
+            for cell in column_cells:
+                cell.font = None
+                cell.border = None
+                cell.alignment = Alignment(horizontal='left')
+        for column in df.columns:
             max_length = 0
-            for cell in worksheet_expedient[column_letter]:
+            column_letter = get_column_letter(df.columns.get_loc(column) + 1)
+            for cell in worksheet[column_letter]:
                 try:
                     if len(str(cell.value)) > max_length:
                         max_length = len(str(cell.value))
                 except:
                     pass
             adjusted_width = (max_length + 2) * 1.2
-            worksheet_expedient.column_dimensions[column_letter].width = adjusted_width
+            worksheet.column_dimensions[column_letter].width = adjusted_width
+
+    # Convertir datos a formato numérico en Excel
+    for col in ['A', 'H', 'J', 'K', 'O', 'P', 'U', 'X']:  # Columnas que se convertirán a formato numérico
+        worksheet_expedient = workbook['metadatos_expediente']
+        for cell in worksheet_expedient[col]:
+            if cell.value:
+                try:
+                    cell.value = float(cell.value)
+                except ValueError:
+                    pass
+            cell.alignment = Alignment(horizontal='right')  # Mover esta línea aquí dentro del bucle
+
+    for col in ['D', 'E']:  # Columnas que se convertirán a formato numérico
+        worksheet_tipologia = workbook['metadatos_tipologia_documental']
+        for cell in worksheet_tipologia[col]:  
+            if cell.value:
+                try:
+                    cell.value = float(cell.value)
+                except ValueError:
+                    pass
+            cell.alignment = Alignment(horizontal='right')  # Mover esta línea aquí dentro del bucle
+
+    # Ajustar ancho de columnas para hoja metadatos_expediente
+    for column_letter in ['R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB']:
+        max_length = 0
+        for cell in worksheet_expedient[column_letter]:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = (max_length + 2) * 1.2
+        worksheet_expedient.column_dimensions[column_letter].width = adjusted_width
+
+    workbook.save(filename=xlsx_output_path, encoding='utf-8')
 
     print(f"Se ha generado el archivo Excel para el expediente {user} en: {xlsx_output_path}")
 

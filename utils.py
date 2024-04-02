@@ -132,11 +132,3 @@ def copy_excel_to_user_folder(user, base_folder, result_folder):
     
     shutil.copy(excel_file_path, destination_path)
     print(f"Archivo Excel guardado también en la carpeta del expediente {user}")
-
-# Función para cargar la configuración desde un archivo JSON
-def load_config():
-    with open('config.json', 'r') as f:
-        return json.load(f)
-
-# Cargar la configuración al inicio del script
-config_data = load_config()
