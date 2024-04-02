@@ -311,7 +311,7 @@ def save_to_excel(user, user_folder, result_folder, df, df_expedient):
                 worksheet.column_dimensions[column_letter].width = adjusted_width
 
         # Convertir datos a formato numérico en Excel
-        for col in ['A', 'J', 'K', 'O', 'P', 'U', 'X']:  # Columnas que se convertirán a formato numérico
+        for col in ['A', 'H', 'J', 'K', 'O', 'P', 'U', 'X']:  # Columnas que se convertirán a formato numérico
             worksheet_expedient = writer.sheets['metadatos_expediente']
             for cell in worksheet_expedient[col]:
                 if cell.value:
