@@ -437,5 +437,5 @@ def copy_excel_to_user_folder(user, base_folder, result_folder):
     shutil.copy(excel_file_path, destination_path)
     print(f"Archivo Excel guardado también en la carpeta del expediente {user}")
 
-if __name__ == "__main__":
-    main()
+    if __name__ == "__main__":
+        main()

@@ -1,0 +1,9 @@
+PyMuPDF
+nltk
+pandas
+PyPDF2
+openpyxl
+transformers
+torch
+tensorflow
+flax
